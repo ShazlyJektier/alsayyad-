@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title id="app-title-tag">الصياد برو</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" id="meta-theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #f3f4f6; transition: background 0.5s; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        #logo-container img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="main-app" class="max-w-md w-full glass rounded-[3rem] p-10 shadow-2xl text-center animate-in">
+        
+        <div class="flex justify-center mb-6 cursor-pointer" onclick="checkAdminPass()">
+            <div id="ui-color-box" class="w-24 h-24 bg-blue-600 rounded-3xl shadow-lg flex items-center justify-center overflow-hidden transition-all">
+                <div id="logo-container" class="w-full h-full flex items-center justify-center">
+                    <svg id="default-icon" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <h1 id="ui-title" class="text-3xl font-black mb-2 text-gray-800 tracking-tight">الصياد برو</h1>
+        <p id="ui-desc" class="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mb-10">نظام الإدارة الذكي</p>
+
+        <div id="login-section" class="space-y-6">
+            <input type="tel" id="user-phone" placeholder="رقم الجوال" 
+                class="w-full px-6 py-5 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl text-center text-xl outline-none transition-all shadow-inner">
+            <button onclick="processEntry()" id="ui-button" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl transition-all active:scale-95 text-lg">
+                دخول عبر واتساب 💬
+            </button>
+        </div>
+
+        <div id="success-section" class="hidden animate-in">
+            <div class="bg-green-50 p-6 rounded-2xl border border-green-100 mb-4 text-green-700 font-bold">
+                تم تسجيل البيانات بنجاح!
+            </div>
+            <button onclick="location.reload()" class="text-gray-400 text-sm font-bold underline">رجوع</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black text-blue-900">إعدادات العميل ⚙️</h2>
+                <button onclick="closeAdmin()" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+            
+            <div class="space-y-5 text-right">
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <label class="block text-xs font-black text-gray-400 mb-2">اسم التطبيق</label>
+                    <input type="text" id="cfg-title" class="w-full p-3 border rounded-xl outline-none">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <label class="block text-xs font-black text-gray-400 mb-2">رابط لوجو العميل (صورة URL)</label>
+                    <input type="text" id="cfg-logo" placeholder="https://..." class="w-full p-3 border rounded-xl outline-none">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <label class="block text-xs font-black text-gray-400 mb-2">رقم واتساب الإدارة</label>
+                    <input type="tel" id="cfg-phone" placeholder="2010xxxxxxxx" class="w-full p-3 border rounded-xl outline-none">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <label class="block text-xs font-black text-gray-400 mb-2">رابط Google Script (CRM)</label>
+                    <input type="text" id="cfg-script" class="w-full p-3 border rounded-xl outline-none text-xs">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <label class="block text-xs font-black text-gray-400 mb-2 text-right">لون الهوية</label>
+                    <input type="color" id="cfg-color" class="w-full h-12 rounded-xl cursor-pointer">
+                </div>
+                
+                <button onclick="saveAdminSettings()" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg mt-4">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultSettings = {
+            title: "الصياد برو",
+            phone: "2010xxxxxxxx",
+            script: "",
+            color: "#2563eb",
+            logo: "",
+            msg: "طلب دخول جديد"
+        };
+
+        window.onload = function() {
+            const saved = JSON.parse(localStorage.getItem('sayadSettings')) || defaultSettings;
+            applySettings(saved);
+        };
+
+        function applySettings(s) {
+            document.getElementById('ui-title').innerText = s.title;
+            document.getElementById('app-title-tag').innerText = s.title;
+            document.getElementById('ui-color-box').style.backgroundColor = s.color;
+            document.getElementById('ui-button').style.backgroundColor = s.color;
+            document.getElementById('meta-theme-color').content = s.color;
+
+            // تطبيق اللوجو إذا وجد رابط
+            const logoContainer = document.getElementById('logo-container');
+            if (s.logo && s.logo.trim() !== "") {
+                logoContainer.innerHTML = `<img src="${s.logo}" alt="logo">`;
+            } else {
+                logoContainer.innerHTML = `<svg class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`;
+            }
+
+            // ملء الإدمن
+            document.getElementById('cfg-title').value = s.title;
+            document.getElementById('cfg-logo').value = s.logo || "";
+            document.getElementById('cfg-phone').value = s.phone;
+            document.getElementById('cfg-script').value = s.script;
+            document.getElementById('cfg-color').value = s.color;
+        }
+
+        async function processEntry() {
+            const s = JSON.parse(localStorage.getItem('sayadSettings')) || defaultSettings;
+            const userPhone = document.getElementById('user-phone').value;
+            const orderId = "S-" + Math.floor(1000 + Math.random() * 9000);
+
+            if(!userPhone) return alert("سجل الرقم!");
+
+            if(s.script) {
+                fetch(s.script, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ phone: userPhone, orderId: orderId }) });
+            }
+
+            window.open(`https://wa.me/${s.phone}?text=*${s.msg}*%0A📱 رقم العميل: ${userPhone}%0A🆔 كود: ${orderId}`, '_blank');
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('success-section').classList.remove('hidden');
+        }
+
+        function checkAdminPass() {
+            const p = prompt("كلمة مرور الإدارة:");
+            if(p === "1234") document.getElementById('admin-panel').classList.remove('hidden');
+        }
+
+        function saveAdminSettings() {
+            const newCfg = {
+                title: document.getElementById('cfg-title').value,
+                logo: document.getElementById('cfg-logo').value,
+                phone: document.getElementById('cfg-phone').value,
+                script: document.getElementById('cfg-script').value,
+                color: document.getElementById('cfg-color').value,
+                msg: "طلب دخول جديد"
+            };
+            localStorage.setItem('sayadSettings', JSON.stringify(newCfg));
+            location.reload();
+        }
+
+        function closeAdmin() { document.getElementById('admin-panel').classList.add('hidden'); }
+    </script>
+</body>
+</html>
